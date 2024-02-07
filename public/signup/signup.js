@@ -21,6 +21,7 @@ function addUser(e) {
     .then((response) => {
         console.log(response)
         alert('You have Signed Up Successfully! Now you can Log In')
+        window.location.href = '../login/login.html'
     })
     .catch(err => {
         if(err == "AxiosError: Request failed with status code 400"){

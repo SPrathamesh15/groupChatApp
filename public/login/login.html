@@ -10,34 +10,26 @@
 <body>
 
     <div class="row">
-        <div class="col-6" id='signup-left'>
-            <h1>This is Sign Up page</h1>
+        <div class="col-6" id='login-left'>
+            <h1>This is Log In page</h1>
             <form id='addform'>
-                <div class="mb-3">
-                    <label for="name" class="form-label">Enter Name*</label>
-                    <input type="text" class="form-control" id="name" required>
-                  </div>
                 <div class="mb-3">
                   <label for="exampleInputEmail1" class="form-label">Email address*</label>
                   <input type="email" class="form-control" id="email" required>
-                  <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
                 </div>
-                <div class="mb-3">
-                    <label for="phoneNumber" class="form-label">Phone Number*</label>
-                    <input type="tel" class="form-control" id="phoneNumber" required>
-                  </div>
+                
                 <div class="mb-3">
                   <label for="Password" class="form-label">Password*</label>
                   <input type="password" class="form-control" id="password" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Sign Up</button>
+                <button type="submit" class="btn btn-primary">log In</button>
               </form>
-              <p class='p'> Already have a account? <a href="../login/login.html" style=" text-decoration: underline;">Log In</a></p>
+              <p class = 'p'> New User? <a href="../signup/signup.html" style=" text-decoration: underline;">Sign Up</a></p>
         </div>
         <div class="col-6" id='signup-right'>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.5/axios.min.js"></script>
-    <script src='./signup.js'></script>
+    <script src='./login.js'></script>
 </body>
 </html>
