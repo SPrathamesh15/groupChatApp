@@ -8,9 +8,9 @@
 }
 #signup-right{
     margin-left: -250px;
-    margin-top: -50px;
+    margin-top: -20px;
     background-image: url('../../pictures/background-img.jpg');
-    background-size: cover;
+    background-size: contain;
     background-repeat: no-repeat;
     height: 100vh;
 }
