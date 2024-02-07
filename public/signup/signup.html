@@ -12,7 +12,7 @@
     <div class="row">
         <div class="col-6" id='signup-left'>
             <h1>This is Sign Up page</h1>
-            <form>
+            <form id='addform'>
                 <div class="mb-3">
                     <label for="name" class="form-label">Enter Name</label>
                     <input type="text" class="form-control" id="name">
@@ -27,14 +27,16 @@
                     <input type="text" class="form-control" id="phoneNumber">
                   </div>
                 <div class="mb-3">
-                  <label for="exampleInputPassword1" class="form-label">Password</label>
-                  <input type="password" class="form-control" id="exampleInputPassword1">
+                  <label for="Password" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="password">
                 </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn btn-primary">Sign Up</button>
               </form>
         </div>
         <div class="col-6" id='signup-right'>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.5/axios.min.js"></script>
+    <script src='./signup.js'></script>
 </body>
 </html>
