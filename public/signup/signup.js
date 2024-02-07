@@ -23,6 +23,10 @@ function addUser(e) {
         alert('You have Signed Up Successfully! Now you can Log In')
     })
     .catch(err => {
-        console.log(err)
+        if(err == "AxiosError: Request failed with status code 400"){
+            alert('User already exists!')
+        } else{
+            console.log(err)
+        }
     })
 }

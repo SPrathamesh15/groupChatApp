@@ -14,7 +14,6 @@ exports.postAddUser = async (req, res, next) => {
       if (existingUser) {
         console.log('user exists!')
         return res.status(400).json({ error: 'User already exists' });
-        
       }
       const data = await User.create({
         username: username,
