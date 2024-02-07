@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 
 const userRoutes = require('./routes/signup');
+const userLogInRoutes = require('./routes/login');
 const User = require('./models/signup');
 
 app.use(cors());
@@ -16,6 +17,7 @@ app.use(express.json());
 
 
 app.use('/user', userRoutes)
+app.use('/user', userLogInRoutes)
 
 sequelize.sync()
     .then(() => {
