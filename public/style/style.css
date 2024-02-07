@@ -1,0 +1,15 @@
+#signup-left{
+    margin-left: 200px;
+    margin-top: 100px;
+}
+#signup-right{
+    margin-left: -250px;
+    margin-top: -50px;
+    background-image: url('../../pictures/background-img.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 100vh;
+}
+.form-control{
+    width: 50%
+}
