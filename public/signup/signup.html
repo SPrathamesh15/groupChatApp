@@ -24,7 +24,8 @@
                 </div>
                 <div class="mb-3">
                     <label for="phoneNumber" class="form-label">Phone Number*</label>
-                    <input type="tel" class="form-control" id="phoneNumber" required>
+                    <input type="tel" class="form-control" id="phoneNumber" pattern="[0-9]{10}" required>
+                    <div id="phoneNumberHelp" class="form-text">Please enter a 10-digit phone number.</div>
                   </div>
                 <div class="mb-3">
                   <label for="Password" class="form-label">Password*</label>

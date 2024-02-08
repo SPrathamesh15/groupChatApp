@@ -16,10 +16,12 @@ const UserDetails = sequelize.define('user', {
   useremail: {
     type: Sequelize.STRING,
     allowNull: false,
+    unique: true
   },
   usernumber: {
     type: Sequelize.BIGINT,
     allowNull: false,
+    unique: true
   },
   userpassword: {
     type: Sequelize.STRING,

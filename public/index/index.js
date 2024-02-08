@@ -37,6 +37,32 @@ document.addEventListener('DOMContentLoaded', function() {
         return messageDiv;
     }
 
+    function renderMessages(messages) {
+        messages.forEach(message => {
+            const name = message.name
+            const messageContent = message.message
+            const time = message.time
+            const getMessageElement = createMessageElement(`${name}:`, `${messageContent}`, `${time}`, true);
+            chatContainer.appendChild(getMessageElement);
+        });
+    }
+    const token = localStorage.getItem('token')
+    // Function to fetch all messages
+    function getAllMessages() {
+        axios.get("http://localhost:3000/messages/all-messages",{
+        headers: {'Authorization' : token}
+    })
+            .then(response => {
+                const messages = response.data.messages;
+                console.log(messages)
+                renderMessages(messages);
+            })
+            .catch(err => console.log('get messages frontend', err));
+    }
+
+    // Call the function to fetch all messages when the page loads
+    getAllMessages();
+
     // Function to handle sending messages
     function sendMessage() {
         const messageContent = messageInput.value.trim();
@@ -49,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const Messages = {
             messageContent: messageContent,
+            time: currentTime
         }
 
         const token = localStorage.getItem('token');

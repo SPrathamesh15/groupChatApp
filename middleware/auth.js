@@ -11,7 +11,7 @@ const Authenticate = (req, res, next)  => {
         const user = jwt.verify(token, process.env.JWT_ACCESS_TOKEN)
         console.log('userID=', user.userId)
         User.findByPk(user.userId).then(user=>{
-
+            
             req.user = user // set req.user to user
             next();
         }).catch(err=>console.log(err))
