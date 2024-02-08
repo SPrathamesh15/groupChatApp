@@ -1,3 +1,6 @@
+body {
+    overflow-x: hidden;
+}
 #signup-left{
     margin-left: 200px;
     margin-top: 100px;
@@ -6,13 +9,14 @@
     margin-left: 200px;
     margin-top: 200px;
 }
-#signup-right{
-    margin-left: -250px;
-    margin-top: -20px;
-    background-image: url('../../pictures/background-img.jpg');
+.img{
     background-size: contain;
     background-repeat: no-repeat;
     height: 100vh;
+}
+#signup-right{
+    margin-left: -250px;
+    margin-top: -20px;
 }
 .form-control{
     width: 50%
