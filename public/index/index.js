@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
     const chatContainer = document.getElementById('chat-container');
+    let token = localStorage.getItem('token'); 
 
     // Function to create a new message element
     function createMessageElement(sender, content, time, isSent) {
@@ -36,68 +37,100 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return messageDiv;
     }
+
+    // Function to render messages
     function renderMessages(messages) {
-        // Clearing existing messages
-        chatContainer.innerHTML = '';
+        chatContainer.innerHTML = ''; // Clear existing messages
         messages.forEach(message => {
-            const name = message.name
-            const messageContent = message.message
-            const time = message.time
+            const name = message.name;
+            const messageContent = message.message;
+            const time = message.time;
             const getMessageElement = createMessageElement(`${name}:`, `${messageContent}`, `${time}`);
             chatContainer.appendChild(getMessageElement);
         });
     }
-    
-    const token = localStorage.getItem('token')
-    // Function to fetch all messages
-    function getAllMessages() {
-        axios.get("http://localhost:3000/messages/all-messages",{
-        headers: {'Authorization' : token}
-    })
-            .then(response => {
-                const messages = response.data.messages;
-                console.log(messages)
-                renderMessages(messages);
-            })
-            .catch(err => console.log('get messages frontend', err));
+
+    // Function to save messages to local storage
+    function saveMessagesToLocalStorage(messages) {
+        localStorage.setItem('messages', JSON.stringify(messages));
     }
 
-    // Call the function to fetch all messages when the page loads
-    getAllMessages();
+    // Function to get messages from local storage
+    function getMessagesFromLocalStorage() {
+        const messages = localStorage.getItem('messages');
+        return messages ? JSON.parse(messages) : [];
+    }
+
+    // Function to fetch new messages from the server
+    function fetchNewMessages() {
+        const lastMessageId = localStorage.getItem('lastMessageId') || -1;
+
+        axios.get(`http://localhost:3000/messages/get-new-messages?lastMessageId=${lastMessageId}`, {
+            headers: {'Authorization': token}
+        })
+            .then(response => {
+                const newMessages = response.data.messages;
+                if (newMessages.length > 0) {
+                    const storedMessages = getMessagesFromLocalStorage();
+                    const mergedMessages = [...storedMessages, ...newMessages];
+                    saveMessagesToLocalStorage(mergedMessages);
+
+                    renderMessages(mergedMessages);
+                    
+                    // Updating lastMessageId
+                    const latestMessageId = newMessages[newMessages.length - 1].id;
+                    localStorage.setItem('lastMessageId', latestMessageId);
+                }
+            })
+            .catch(err => console.log('Error fetching new messages:', err));
+    }
 
     // Function to handle sending messages
     function sendMessage() {
         const messageContent = messageInput.value.trim();
         if (messageContent === '') return;
-
+    
         const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+    
         const sentMessageElement = createMessageElement('You:', messageContent, currentTime, true);
         chatContainer.appendChild(sentMessageElement);
-
+    
         const Messages = {
             messageContent: messageContent,
             time: currentTime
         }
-
-        const token = localStorage.getItem('token');
+    
+        console.log('Sending message:', Messages);
+    
         axios.post("http://localhost:3000/messages/add-message", Messages, {
             headers: {'Authorization' : token}})
-            .then(response => console.log(response))
-            .catch(err => console.log('postmessages frontend',err))
+            .then(response => {
+                console.log('Response from server:', response); 
+                // If the message is successfully added, we will update the local storage and fetch new messages
+                fetchNewMessages();
+            })
+            .catch(err => {
+                console.log('Error sending message:', err); 
+            })
+    
         // Clearing the input field after sending the message
         messageInput.value = '';
     }
+    
 
     // Event listener for the send button
     sendButton.addEventListener('click', sendMessage);
 
-    // Optional: Allow sending messages by pressing Enter
-    messageInput.addEventListener('keypress', function(event) {
+     // Optional: Allow sending messages by pressing Enter
+     messageInput.addEventListener('keypress', function(event) {
         if (event.key === 'Enter') {
             sendMessage();
         }
     });
-    // Continuously fetching messages every second
-    setInterval(getAllMessages, 1000);
+
+    // Fetching new messages every second
+    setInterval(fetchNewMessages, 1000);
+
+    // When the page loads, rendering messages from local storage
+    renderMessages(getMessagesFromLocalStorage());
 });
