@@ -36,16 +36,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return messageDiv;
     }
-
     function renderMessages(messages) {
+        // Clearing existing messages
+        chatContainer.innerHTML = '';
         messages.forEach(message => {
             const name = message.name
             const messageContent = message.message
             const time = message.time
-            const getMessageElement = createMessageElement(`${name}:`, `${messageContent}`, `${time}`, true);
+            const getMessageElement = createMessageElement(`${name}:`, `${messageContent}`, `${time}`);
             chatContainer.appendChild(getMessageElement);
         });
     }
+    
     const token = localStorage.getItem('token')
     // Function to fetch all messages
     function getAllMessages() {
@@ -96,4 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
             sendMessage();
         }
     });
+    // Continuously fetching messages every second
+    setInterval(getAllMessages, 1000);
 });
