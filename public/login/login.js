@@ -4,7 +4,7 @@ addForm.addEventListener('submit', logInUser)
 
 function logInUser(e){
     e.preventDefault()
-        
+    
     var userEmail = document.getElementById('email').value;
     var userPassword = document.getElementById('password').value;
 

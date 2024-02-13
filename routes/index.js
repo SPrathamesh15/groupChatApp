@@ -5,6 +5,21 @@ const router = express.Router();
 
 router.post('/add-message', userAuthentication.Authenticate, messageController.postAddMessage);
 router.get('/all-messages', userAuthentication.Authenticate, messageController.getAllMessages);
-router.get('/get-new-messages', userAuthentication.Authenticate, messageController.getNewMessages); // New route for fetching new messages
+router.get('/get-new-messages', userAuthentication.Authenticate, messageController.getNewMessages);
+router.post('/add-group', userAuthentication.Authenticate, messageController.postAddGroup);
+
+// Route to fetch all groups
+router.get('/all-groups', userAuthentication.Authenticate, messageController.getAllGroups);
+
+// Route to fetch messages for a specific group
+router.get('/group/:groupId', userAuthentication.Authenticate, messageController.getMessagesForGroup);
+
+// Route to fetch users for a specific group
+router.get('/:groupId/users', messageController.getUsersForGroup);
+
+// Route to add a user to a group
+router.post('/:groupId/users', messageController.addUserToGroup);
+
+router.get('/all-users', messageController.getAllUsers);
 
 module.exports = router;
