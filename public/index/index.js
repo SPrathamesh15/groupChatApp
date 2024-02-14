@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const Form = document.getElementById('addform')
     const groupListContainer = document.getElementById('groupsList-container');
     let token = localStorage.getItem('token'); 
-
+    let groupId;
     Form.addEventListener('submit', addGroup)
 
     function addGroup(e){
@@ -189,6 +189,7 @@ function renderGroups(groups) {
 
     // Function to fetch and render messages for a specific group
     function fetchMessages(groupId) {
+        groupId = groupId;
         axios.get(`http://localhost:3000/messages/group/${groupId}`, {
             headers: { 'Authorization': token }
         })
@@ -238,9 +239,19 @@ function renderGroups(groups) {
     function renderUsers(users) {
         const userList = document.getElementById('groupUsersList');
         userList.innerHTML = '';
+        const tokenParts = token.split('.');
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const current_user = payload.name;
         users.forEach(user => {
             const listItem = document.createElement('li');
-            listItem.textContent = user.username;
+            let name
+            if (user.username === current_user){
+                name = "You";
+            }
+            else{
+                name = user.username;
+            }
+            listItem.textContent = name;
             userList.appendChild(listItem);
         });
     }
@@ -263,6 +274,7 @@ function renderGroups(groups) {
             const option = document.createElement('option');
             option.value = user.id;
             option.textContent = user.username;
+            setSelectedUserId(user.id);
             userSelect.appendChild(option);
         });
     }
@@ -271,8 +283,10 @@ function renderGroups(groups) {
     groupListContainer.addEventListener('click', function(event) {
         const selectedGroup = event.target.closest('.group-list');
         if (selectedGroup) {
-            const groupId = selectedGroup.getAttribute('data-group-id');
+            const clickedGroupId = selectedGroup.getAttribute('data-group-id');
+            groupId = clickedGroupId;
             selectedGroupId = groupId;
+            
             fetchUsersForGroup(groupId);
         }
     });
@@ -294,6 +308,48 @@ function renderGroups(groups) {
             });
     });
 
-    // Fetch groups and populate user select dropdown
+    const makeAdminButton = document.getElementById('makeAdminButton');
+    const removeUserButton = document.getElementById('removeUserButton');
+    let selectedUserId;
+
+    // Event listener for making a user admin
+    makeAdminButton.addEventListener('click', function() {
+        if (!selectedUserId) {
+            alert('Please select a user to make admin.');
+            return;
+        }
+        axios.post(`http://localhost:3000/groups/${groupId}/users/${selectedUserId}/make-admin`)
+            .then(response => {
+                alert('User has been made admin successfully.');
+            })
+            .catch(error => {
+                console.error('Error making user admin:', error);
+                alert('Error making user admin. Please try again.');
+            });
+    });
+
+    // Event listener for removing a user from the group
+    removeUserButton.addEventListener('click', function() {
+        if (!selectedUserId) {
+            alert('Please select a user to remove from the group.');
+            return;
+        }
+
+        axios.delete(`http://localhost:3000/groups/${groupId}/users/${selectedUserId}`)
+            .then(response => {
+                alert('User has been removed from the group successfully.');
+
+            })
+            .catch(error => {
+                console.error('Error removing user from group:', error);
+                alert('Error removing user from group. Please try again.');
+            });
+    });
+
+    // Function to set selectedUserId when a user is selected
+    function setSelectedUserId(userId) {
+        selectedUserId = userId;
+    }
+    // Fetching groups and populate user select dropdown
     fetchAndPopulateUsers();
 });

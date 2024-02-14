@@ -22,4 +22,10 @@ router.post('/:groupId/users', messageController.addUserToGroup);
 
 router.get('/all-users', messageController.getAllUsers);
 
+// Route to make a user admin
+router.post('/:groupId/users/:userId/make-admin', messageController.makeUserAdmin);
+
+// Route to remove a user from the group
+router.delete('/:groupId/users/:userId', messageController.removeUserFromGroup);
+
 module.exports = router;

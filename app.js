@@ -13,6 +13,7 @@ const messagesRoutes = require('./routes/index');
 const User = require('./models/signup');
 const Messages = require('./models/messages');
 const Group = require('./models/group')
+const UserGroup = require('./models/usergroup')
 
 app.use(cors());
 app.use(bodyParser.urlencoded());
@@ -35,8 +36,8 @@ User.hasMany(Messages)
 Messages.belongsTo(User)
 
 //Association of user with group
-User.belongsToMany(Group, { through: 'UserGroup' });
-Group.belongsToMany(User, { through: 'UserGroup' });
+User.belongsToMany(Group, { through: UserGroup, as: 'GroupMembers' });
+Group.belongsToMany(User, { through: UserGroup, as: 'GroupUsers' });
 
 //Association of messages with group
 Group.hasMany(Messages)

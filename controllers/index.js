@@ -2,6 +2,7 @@ const User = require('../models/signup')
 const sequelize = require('../util/database')
 const Messages = require('../models/messages')
 const Groups = require('../models/group')
+const UserGroup = require('../models/usergroup')
 const { Op } = require('sequelize');
 
 exports.postAddMessage = async (req, res, next) => {
@@ -40,17 +41,17 @@ exports.postAddGroup = async (req, res, next) => {
     try {
         const groupname = req.body.groupname;
         const userId = req.user.id;
+        const isAdmin = true; // Setting the creator of the group as admin
 
         const group = await Groups.create(
             {
                 groupName: groupname,
-                // userId: userId // This line will not be necessary for the many-to-many association
             },
             { transaction: t }
         );
 
         // Associating the current user with the group
-        await group.addUser(userId, { transaction: t });
+        await group.addGroupUser(userId, { through: { isAdmin: isAdmin }, transaction: t });
 
         await t.commit();
 
@@ -62,6 +63,7 @@ exports.postAddGroup = async (req, res, next) => {
         console.error(err);
     }
 };
+
 
 exports.getAllMessages = async (req, res, next) => {
     try {
@@ -82,6 +84,7 @@ exports.getAllGroups = async (req, res, next) => {
         const groups = await Groups.findAll({
             include: [{ 
                 model: User, 
+                as: 'GroupUsers', // Specifying the alias here
                 where: { id: userId } 
             }]
         });
@@ -92,6 +95,7 @@ exports.getAllGroups = async (req, res, next) => {
         console.error(err);
     }
 };
+
 
 exports.getMessagesForGroup = async (req, res, next) => {
     try {
@@ -133,13 +137,14 @@ exports.getUsersForGroup = async (req, res, next) => {
         if (!group) {
             return res.status(404).json({ error: "Group not found" });
         }
-        const users = await group.getUsers();
+        const users = await group.getGroupUsers(); 
         res.status(200).json({ users: users });
     } catch (err) {
         res.status(500).json({ error: err.message });
         console.error(err);
     }
 };
+
 
 exports.addUserToGroup = async (req, res, next) => {
     try {
@@ -152,13 +157,13 @@ exports.addUserToGroup = async (req, res, next) => {
         }
 
         // Checking if the user already belongs to the group
-        const existingUser = await group.getUsers({ where: { id: userId }});
+        const existingUser = await group.getGroupUsers({ where: { id: userId }});
         if (existingUser.length > 0) {
             return res.status(400).json({ error: "User already belongs to the group" });
         }
 
         // Adding user to the group
-        await group.addUser(userId);
+        await group.addGroupUser(userId);
 
         res.status(201).json({ message: "User added to the group successfully" });
     } catch (err) {
@@ -167,6 +172,7 @@ exports.addUserToGroup = async (req, res, next) => {
     }
 };
 
+
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll();
@@ -174,6 +180,48 @@ exports.getAllUsers = async (req, res) => {
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Failed to fetch users' });
+    }
+};
+
+exports.makeUserAdmin = async (req, res, next) => {
+    try {
+        const groupId = req.params.groupId;
+        const selectedUserId = req.params.userId;
+
+        // Updating UserGroup entry to mark the user as admin
+        const userGroup = await UserGroup.findOne({
+            where: {
+                groupId: groupId,
+                userId: selectedUserId
+            }
+        });
+        userGroup.isAdmin = true;
+        await userGroup.save();
+
+        res.status(200).json({ message: "User is now an admin" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+        console.error(err);
+    }
+};
+
+exports.removeUserFromGroup = async (req, res, next) => {
+    try {
+        const groupId = req.params.groupId;
+        const userId = req.params.userId;
+
+        // Removing UserGroup entry to remove the user from the group
+        await UserGroup.destroy({
+            where: {
+                groupId: groupId,
+                userId: userId
+            }
+        });
+
+        res.status(200).json({ message: "User removed from group" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+        console.error(err);
     }
 };
 
