@@ -8,7 +8,7 @@
     <title>Group Chat App</title>
 </head>
 <body>
-    <h1 style="text-align: center; background-color: #128C7E; padding: 20px; color: white; margin-bottom: 0;">Group Chat App</h1>
+    <h1 style="text-align: center; background-color: #16385d; padding: 20px; color: white; margin-bottom: 0;">Group Chat App</h1>
         <div class="row">
             <div class="col-4" style='margin-top: 40px;width:400px;'>
                 <form id="addform">
@@ -24,12 +24,7 @@
                     <div id="groupsContainer" style='margin-top: 10px;margin-left:10px;'>
                         <h3>Groups:</h3>
                         <div id="groupsList-container">
-                            {% comment %} <div class="group-list">
-                                <span class="group-lists">group1</span>
-                            </div>
-                            <div class="group-list">
-                                <span class="group-list">group1</span>
-                            </div> {% endcomment %}
+                            
                         </div>
                     </div>
                 </form>
@@ -39,16 +34,16 @@
                     <h3>Group Users:</h3>
                     <ul id="groupUsersList"></ul>
                     <div>
-                        <h4>Add Users:</h4>
+                        <h4 style='margin-bottom: -10px;margin-top: 10px;'>Add Users:</h4>
                         <select id="userSelect">
                             <!-- Populating this dropdown dynamically with users -->
                         </select>
                         <button id="addUserToGroup">+ Add</button>
                     </div>
                     <div>
-                        <h4>Actions:</h4>
-                        <button id="makeAdminButton">Make Admin</button>
-                        <button id="removeUserButton">Remove User</button>
+                        <h4 style='margin-bottom: -10px;margin-top: 10px;'>Actions:</h4>
+                        <button class="create-group-btn" style='margin-left:0px;' id="makeAdminButton">Make Admin</button>
+                        <button class="create-group-btn" style='margin-left: 160px;' id="removeUserButton">Remove User</button>
                     </div>
                 </div>
                 <div class="chat-container" id="chat-container"></div>

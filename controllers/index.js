@@ -5,14 +5,80 @@ const Groups = require('../models/group')
 const UserGroup = require('../models/usergroup')
 const { Op } = require('sequelize');
 
-exports.postAddMessage = async (req, res, next) => {
+const io = require('socket.io')(8000, {
+    cors: {
+        origin: ['http://localhost:3000']
+    }
+})
+
+const jwt = require('jsonwebtoken');
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+  
+    if (!token) {
+      return next(new Error('Authentication token is missing'));
+    }
+  
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN);
+      const userId = decoded.userId;
+  
+      // Fetching user details from the database
+      User.findByPk(userId)
+        .then(user => {
+          if (!user) {
+            return next(new Error('User not found'));
+          }
+          // Attaching user details to the socket object for future use
+          socket.user = {
+            userId: user.id,
+            username: user.username
+          };
+          next();
+        })
+        .catch(err => {
+          console.error('Error fetching user:', err);
+          next(err);
+        });
+    } catch (err) {
+      console.error('Error verifying token:', err);
+      next(new Error('Invalid authentication token'));
+    }
+});
+
+io.on('connection', async(socket) => {
+    console.log("socket ID: ", socket.id)
+    socket.on('selected-group', async (groupId) => {
+        try {
+            const messages = await Messages.findAll({
+                where: { groupId: groupId }
+            });
+            socket.emit("group-messages", messages);
+        } catch (err) {
+            console.error(err);
+        }
+    });
+    socket.on('send-message', async (message) => {
+        try {
+            // Saving the message to the database
+            const { userId, username } = socket.user;
+            const savedMessage = await postAddMessage(message, username, userId);
+            io.emit("recieve-message", {message, username});
+        } catch (err) {
+            console.error(err);
+        }
+        
+    });
+})
+
+async function postAddMessage(socketMessage,username,UserId) {
     const t = await sequelize.transaction();
     try {
-        const name = req.user.username;
-        const messages = req.body.messageContent;
-        const time = req.body.time;
-        const userId = req.user.id;
-        const groupId = req.body.groupId;
+        const name = username;
+        const messages = socketMessage.messageContent;
+        const time = socketMessage.currentTime;
+        const userId = UserId;
+        const groupId = socketMessage.groupId;
 
         const message = await Messages.create(
             {
@@ -27,14 +93,15 @@ exports.postAddMessage = async (req, res, next) => {
 
         await t.commit();
 
-        res.status(201).json({ newMessageDetails: message });
+        // res.status(201).json({ newMessageDetails: message });
         console.log('Message added to server');
     } catch (err) {
         await t.rollback();
-        res.status(500).json({ error: err.message });
+        // res.status(500).json({ error: err.message });
         console.error(err);
     }
 };
+module.exports.postAddMessage = postAddMessage;
 
 exports.postAddGroup = async (req, res, next) => {
     const t = await sequelize.transaction();
@@ -150,7 +217,7 @@ exports.addUserToGroup = async (req, res, next) => {
     try {
         const groupId = req.params.groupId;
         const userId = req.body.userId;
-        
+        const currentUserId = req.user.id
         const group = await Groups.findByPk(groupId);
         if (!group) {
             return res.status(404).json({ error: "Group not found" });
@@ -162,6 +229,12 @@ exports.addUserToGroup = async (req, res, next) => {
             return res.status(400).json({ error: "User already belongs to the group" });
         }
 
+        // Checking if the authenticated user is an admin of the group
+        const isAdmin = await checkAdminStatus(groupId, currentUserId);
+        console.log(isAdmin)
+        if (!isAdmin) {
+            return res.status(403).json({ error: "You are not authorized to perform this action" });
+        }
         // Adding user to the group
         await group.addGroupUser(userId);
 
@@ -172,6 +245,28 @@ exports.addUserToGroup = async (req, res, next) => {
     }
 };
 
+async function checkAdminStatus(groupId, userId) {
+    try {
+        const group = await Groups.findByPk(groupId);
+        if (!group) {
+            throw new Error("Group not found");
+        }
+        console.log(groupId, userId)
+        // Checking if the user is an admin of the group
+        const userGroup = await UserGroup.findOne({
+            where: {
+                groupId: groupId,
+                userId: userId,
+                isAdmin: true
+            }
+        });
+        console.log(userGroup)
+        return !!userGroup; // Returning true if the user is an admin, false otherwise
+    } catch (err) {
+        console.error("Error checking admin status:", err);
+        return false; // Returning false in case of any error
+    }
+}
 
 exports.getAllUsers = async (req, res) => {
     try {
@@ -187,7 +282,7 @@ exports.makeUserAdmin = async (req, res, next) => {
     try {
         const groupId = req.params.groupId;
         const selectedUserId = req.params.userId;
-
+        const currentUserId = req.user.id
         // Updating UserGroup entry to mark the user as admin
         const userGroup = await UserGroup.findOne({
             where: {
@@ -195,6 +290,13 @@ exports.makeUserAdmin = async (req, res, next) => {
                 userId: selectedUserId
             }
         });
+
+        // Checking if the authenticated user is an admin of the group
+        const isAdmin = await checkAdminStatus(groupId, currentUserId);
+        if (!isAdmin) {
+            return res.status(403).json({ error: "You are not authorized to perform this action" });
+        }
+
         userGroup.isAdmin = true;
         await userGroup.save();
 
@@ -209,6 +311,13 @@ exports.removeUserFromGroup = async (req, res, next) => {
     try {
         const groupId = req.params.groupId;
         const userId = req.params.userId;
+        const currentUserId = req.user.id
+        console.log('remove;',userId)
+        // Checking if the authenticated user is an admin of the group
+        const isAdmin = await checkAdminStatus(groupId, currentUserId);
+        if (!isAdmin) {
+            return res.status(403).json({ error: "You are not authorized to perform this action" });
+        }
 
         // Removing UserGroup entry to remove the user from the group
         await UserGroup.destroy({

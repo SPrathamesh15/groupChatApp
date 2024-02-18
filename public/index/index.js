@@ -1,3 +1,12 @@
+import { io } from "https://cdn.socket.io/4.7.2/socket.io.esm.min.js";
+
+const socket = io('http://localhost:8000', {
+    auth: {
+    token: localStorage.getItem('token')
+    }
+});
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
@@ -7,6 +16,37 @@ document.addEventListener('DOMContentLoaded', function() {
     let token = localStorage.getItem('token'); 
     let groupId;
     Form.addEventListener('submit', addGroup)
+    
+    socket.on('group-messages', message =>{
+        console.log('group-socket-messages: ',message)
+        renderMessages(message)
+    });
+
+    socket.on('recieve-message', data =>{
+        console.log('recieved-socket-messages: ', data.message, data.username)
+        displayMessage(data.message, data.username)
+    });
+
+    function displayMessage(message, username) {
+        console.log('dislayed Message using socket: ', message)
+        //decoding the token to get the name of the user
+        const tokenParts = token.split('.');
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const current_user = payload.name;
+            const isSent = (username === current_user);
+            let name
+            if (username === current_user){
+                name = "You";
+            }
+            else{
+                name = username;
+            }
+            const messageContent = message.messageContent;
+            const time = message.currentTime;
+            const getMessageElement = createMessageElement(`${name}:`, `${messageContent}`, `${time}`, isSent);
+            chatContainer.appendChild(getMessageElement);
+    }
+
 
     function addGroup(e){
         e.preventDefault()
@@ -129,24 +169,30 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please select a group to send the message');
             return;
         }
-        const groupId = selectedGroup.getAttribute('data-group-id');
-        console.log(groupId)
-        axios.post('http://localhost:3000/messages/add-message', {
+        const message = {
             messageContent: messageContent,
-            groupId: groupId,
-            time: currentTime
-        }, {
-            headers: { 'Authorization': token }
-        })
-        .then(response => {
-            console.log(response);
-            fetchMessages(groupId);
-            messageInput.value = ''; // Clearing the input field after sending the message
-        })
-        .catch(error => {
-            console.error('Error sending message:', error);
-            alert('Error sending message. Please try again.');
-        });
+            currentTime: currentTime
+        }
+        const groupId = selectedGroup.getAttribute('data-group-id');
+        socket.emit('send-message', {messageContent, groupId, currentTime})
+        messageInput.value = '';
+        console.log(groupId)
+        // axios.post('http://localhost:3000/messages/add-message', {
+        //     messageContent: messageContent,
+        //     groupId: groupId,
+        //     time: currentTime
+        // }, {
+        //     headers: { 'Authorization': token }
+        // })
+        // .then(response => {
+        //     console.log(response);
+        //     fetchMessages(groupId);
+        //     messageInput.value = ''; // Clearing the input field after sending the message
+        // })
+        // .catch(error => {
+        //     console.error('Error sending message:', error);
+        //     alert('Error sending message. Please try again.');
+        // });
     }
     
      // Function to fetch groups and render them
@@ -176,30 +222,33 @@ function renderGroups(groups) {
         groupDiv.appendChild(groupSpan);
         groupDiv.addEventListener('click', function() {
             const currentActive = groupListContainer.querySelector('.active');
+            
             if (currentActive) {
                 currentActive.classList.remove('active');
             }
             this.classList.add('active');
             // Fetching and rendering messages for the selected group
-            fetchMessages(group.id);
+            // fetchMessages(group.id);
+            socket.emit('selected-group', group.id)
         });
         groupListContainer.appendChild(groupDiv);
     });
 }
 
     // Function to fetch and render messages for a specific group
-    function fetchMessages(groupId) {
-        groupId = groupId;
-        axios.get(`http://localhost:3000/messages/group/${groupId}`, {
-            headers: { 'Authorization': token }
-        })
-        .then(response => {
-            renderMessages(response.data.messages);
-        })
-        .catch(error => {
-            console.error('Error fetching messages:', error);
-        });
-    }
+    // function fetchMessages(groupId) {
+    //     groupId = groupId;
+        
+    //     // axios.get(`http://localhost:3000/messages/group/${groupId}`, {
+    //     //     headers: { 'Authorization': token }
+    //     // })
+    //     // .then(response => {
+    //     //     renderMessages(response.data.messages);
+    //     // })
+    //     // .catch(error => {
+    //     //     console.error('Error fetching messages:', error);
+    //     // });
+    // }
 
     // Event listener for the send button
     sendButton.addEventListener('click', sendMessage);
@@ -219,12 +268,11 @@ function renderGroups(groups) {
     // // When the page loads, rendering messages from local storage
     // renderMessages(getMessagesFromLocalStorage());
 
-    const groupUsersContainer = document.getElementById('groupUsersContainer');
     const userSelect = document.getElementById('userSelect');
     const addUserButton = document.getElementById('addUserToGroup');
     let selectedGroupId;
 
-    // Fetch users for the selected group
+    // Fetching users for the selected group
     function fetchUsersForGroup(groupId) {
         axios.get(`http://localhost:3000/groups/${groupId}/users`)
             .then(response => {
@@ -252,6 +300,18 @@ function renderGroups(groups) {
                 name = user.username;
             }
             listItem.textContent = name;
+            // Adding click event listener to each user item
+            listItem.addEventListener('click', function() {
+            // Setting selected user ID when user is clicked
+                setSelectedUserId(user.id);
+            // Removing 'active' class from other user items
+            const allUserItems = userList.querySelectorAll('li');
+            allUserItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            // Adding 'active' class to the clicked user item
+            listItem.classList.add('active');
+        });
             userList.appendChild(listItem);
         });
     }
@@ -298,12 +358,15 @@ function renderGroups(groups) {
             alert('Please select a user to add');
             return;
         }
-        axios.post(`http://localhost:3000/groups/${selectedGroupId}/users`, { userId })
+        axios.post(`http://localhost:3000/groups/${selectedGroupId}/users`, { userId },{ headers: { 'Authorization': token } })
             .then(response => {
                 alert('User added to group successfully');
                 fetchUsersForGroup(selectedGroupId);
             })
             .catch(error => {
+                if (error == 'AxiosError: Request failed with status code 403'){
+                    alert('You are not an admin of this group')
+                }
                 console.error('Error adding user to group:', error);
             });
     });
@@ -318,11 +381,15 @@ function renderGroups(groups) {
             alert('Please select a user to make admin.');
             return;
         }
-        axios.post(`http://localhost:3000/groups/${groupId}/users/${selectedUserId}/make-admin`)
+        console.log(token)
+        axios.post(`http://localhost:3000/groups/${groupId}/users/${selectedUserId}/make-admin`,null, { headers: { 'Authorization': token }})
             .then(response => {
                 alert('User has been made admin successfully.');
             })
             .catch(error => {
+                if (error == 'AxiosError: Request failed with status code 403'){
+                    alert('You are not an admin of this group')
+                }
                 console.error('Error making user admin:', error);
                 alert('Error making user admin. Please try again.');
             });
@@ -335,12 +402,16 @@ function renderGroups(groups) {
             return;
         }
 
-        axios.delete(`http://localhost:3000/groups/${groupId}/users/${selectedUserId}`)
+        console.log('selecteduserid;', selectedUserId)
+        axios.delete(`http://localhost:3000/groups/${groupId}/users/${selectedUserId}`, {headers: { 'Authorization': token }})
             .then(response => {
                 alert('User has been removed from the group successfully.');
 
             })
             .catch(error => {
+                if (error == 'AxiosError: Request failed with status code 403'){
+                    alert('You are not an admin of this group')
+                }
                 console.error('Error removing user from group:', error);
                 alert('Error removing user from group. Please try again.');
             });

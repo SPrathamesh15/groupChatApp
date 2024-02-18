@@ -18,14 +18,14 @@ router.get('/group/:groupId', userAuthentication.Authenticate, messageController
 router.get('/:groupId/users', messageController.getUsersForGroup);
 
 // Route to add a user to a group
-router.post('/:groupId/users', messageController.addUserToGroup);
+router.post('/:groupId/users', userAuthentication.Authenticate, messageController.addUserToGroup);
 
 router.get('/all-users', messageController.getAllUsers);
 
 // Route to make a user admin
-router.post('/:groupId/users/:userId/make-admin', messageController.makeUserAdmin);
+router.post('/:groupId/users/:userId/make-admin', userAuthentication.Authenticate, messageController.makeUserAdmin);
 
 // Route to remove a user from the group
-router.delete('/:groupId/users/:userId', messageController.removeUserFromGroup);
+router.delete('/:groupId/users/:userId', userAuthentication.Authenticate, messageController.removeUserFromGroup);
 
 module.exports = router;
