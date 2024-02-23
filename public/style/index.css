@@ -8,7 +8,7 @@
     margin-left: 350px;
 }
 .input-container input[type="text"] {
-    width: calc(100% - 130px);
+    width: calc(100% - 170px);
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 20px;
@@ -16,7 +16,10 @@
     margin-left: 10px;
     padding-left: 15px;
 }
-
+#groupUsersList{
+    height:50px;
+    overflow-y: auto;
+}
 .input-container button {
     background-color: #16385d;
     color: #fff;
@@ -84,7 +87,21 @@ body{
     padding: 10px;
     overflow: auto;
 }
-
+.image{
+    margin-bottom: 5px;
+}
+.image .image-body{
+    background-color: #DCF8C6;
+    display: block;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 50%;
+    margin-left: 320px;
+}
+.image .image-body.received {
+    background-color: white;
+    float: left;
+}
 .message .message-body {
     background-color: #DCF8C6;
     padding: 10px;
@@ -92,7 +109,11 @@ body{
     display: block; 
     max-width: 70%;
 }
-
+.image .image-body::after{
+    content: "";
+    display: table;
+    clear: both;
+}
 .message .message-body::after {
     content: "";
     display: table;
@@ -139,6 +160,8 @@ body{
 }
 .create-group-btn:hover{
     transform: scale(1.1);
+    background-color: #16385d;
+    color:white;
 }
 .group-lists{
     color: white;
@@ -170,6 +193,7 @@ body{
     background-color: #16385d;
     width: 300px;
 }
+
 #userSelect{
     border: none;
     padding: 10px;
@@ -193,8 +217,17 @@ body{
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     transition: 0.2s;
 }
+
 #addUserToGroup:hover{
     transform: scale(1.1);
+    background-color: #16385d;
+    color:white;
+}
+
+#attachment-img{
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
 }
 #groupUsersContainer{
     background-color: #adb5bd;
@@ -206,6 +239,22 @@ body{
     padding-bottom: 20px;
     margin-top: 100px;
 }
+.sent-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 20px;
+    float: right;
+    margin-left: 10px; 
+    margin-right: 10px;
+}
+.received-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 20px;
+    float: left;
+    margin-right: 10px;
+}
+
 #groupUsersList{
     cursor: pointer;
 }

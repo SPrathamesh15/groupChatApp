@@ -4,6 +4,10 @@ const Messages = require('../models/messages')
 const Groups = require('../models/group')
 const UserGroup = require('../models/usergroup')
 const { Op } = require('sequelize');
+const S3Services = require('../services/s3services')
+const AWS = require('aws-sdk')
+const dotenv = require('dotenv')
+dotenv.config()
 
 const io = require('socket.io')(8000, {
     cors: {
@@ -14,50 +18,83 @@ const io = require('socket.io')(8000, {
 const jwt = require('jsonwebtoken');
 io.use((socket, next) => {
     const token = socket.handshake.auth.token;
-  
+
     if (!token) {
-      return next(new Error('Authentication token is missing'));
+    return next(new Error('Authentication token is missing'));
     }
-  
+
     try {
-      const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN);
-      const userId = decoded.userId;
-  
-      // Fetching user details from the database
-      User.findByPk(userId)
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN);
+    const userId = decoded.userId;
+
+    // Fetching user details from the database
+    User.findByPk(userId)
         .then(user => {
-          if (!user) {
+        if (!user) {
             return next(new Error('User not found'));
-          }
-          // Attaching user details to the socket object for future use
-          socket.user = {
+        }
+        // Attaching user details to the socket object for future use
+        socket.user = {
             userId: user.id,
             username: user.username
-          };
-          next();
+        };
+        next();
         })
         .catch(err => {
-          console.error('Error fetching user:', err);
-          next(err);
+        console.error('Error fetching user:', err);
+        next(err);
         });
     } catch (err) {
-      console.error('Error verifying token:', err);
-      next(new Error('Invalid authentication token'));
+    console.error('Error verifying token:', err);
+    next(new Error('Invalid authentication token'));
     }
 });
 
 io.on('connection', async(socket) => {
     console.log("socket ID: ", socket.id)
     socket.on('selected-group', async (groupId) => {
+        
         try {
             const messages = await Messages.findAll({
                 where: { groupId: groupId }
             });
             socket.emit("group-messages", messages);
+            const fileURLs = await fetchFileURLsFromS3();
+            console.log('fileURL: ', fileURLs)
+            const { username } = socket.user;
+        socket.emit('previous-images', {fileURL: fileURLs, userName:username})
         } catch (err) {
             console.error(err);
         }
     });
+    // socket.on('previous-images', async () => {
+    //     try {
+    //         const fileURLs = await fetchFileURLsFromS3();
+    //         socket.emit('previous-images', fileURLs);
+    //     } catch (err) {
+    //         console.error(err);
+    //     }
+    // });        
+    socket.on('send-image', async (data) => {
+        try {
+            const fileData = data.fileData;
+            const fileName = data.fileName;
+            
+            // Call the function to upload the file to Amazon S3
+            const fileURL = await S3Services.uploadToS3(fileData, fileName);
+    
+            // Emit an event to notify clients about the uploaded file URL
+            // io.emit('file-uploaded', { fileURL, fileName });
+            
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        }
+        const { username } = socket.user;
+        io.emit('image-message', { imageData: data.imageData, fileName: data.fileName, userName: username, time: data.currentTime });
+
+        
+    });
+    
     socket.on('send-message', async (message) => {
         try {
             // Saving the message to the database
@@ -71,6 +108,37 @@ io.on('connection', async(socket) => {
     });
 })
 
+// Function to fetch file URLs from S3
+async function fetchFileURLsFromS3() {
+try {
+    // Perform logic to list files in your S3 bucket and generate file URLs
+    // For example:
+    const bucketParams = {
+        Bucket: process.env.BUCKET_NAME, // Update with your S3 bucket name
+        MaxKeys: 10 // Adjust as needed
+    };
+    const IAM_USER_KEY = process.env.IAM_USER_KEY;
+    const IAM_USER_SECRET = process.env.IAM_USER_SECRET;
+    const s3bucket = new AWS.S3({
+        accessKeyId: IAM_USER_KEY,
+        secretAccessKey: IAM_USER_SECRET,
+    });
+    const data = await s3bucket.listObjectsV2(bucketParams).promise();
+
+    const fileURLs = data.Contents.map(file => {
+        return {
+            fileName: file.Key,
+            fileURL: `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${file.Key}`,
+            timestamp: file.LastModified
+        };
+    });
+
+    return fileURLs;
+} catch (error) {
+    console.error('Error fetching file URLs from S3:', error);
+    throw error;
+}
+}
 async function postAddMessage(socketMessage,username,UserId) {
     const t = await sequelize.transaction();
     try {
