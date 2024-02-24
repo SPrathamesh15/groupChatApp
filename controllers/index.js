@@ -9,6 +9,9 @@ const S3Services = require('../services/s3services')
 const AWS = require('aws-sdk')
 const dotenv = require('dotenv')
 dotenv.config()
+const ArchivedMessages = require('../models/archievedmessages')
+const ArchivedFiles = require('../models/archievedfiles')
+const {CronJob} = require('cron');
 
 const io = require('socket.io')(8000, {
     cors: {
@@ -99,6 +102,53 @@ io.on('connection', async(socket) => {
         }
     });
 })
+
+// Defining nightly cron job to archive messages and images
+const nightlyArchiveJob = new CronJob('0 0 * * *', async () => {
+    try {
+        const oneDayAgo = new Date();
+        oneDayAgo.setDate(oneDayAgo.getDate() - 1); 
+
+        const messagesToArchive = await Messages.findAll({
+            where: {
+                time: {
+                    [Op.lt]: oneDayAgo
+                }
+            }
+        });
+        await ArchivedMessages.bulkCreate(messagesToArchive);
+        await Messages.destroy({
+            where: {
+                time: {
+                    [Op.lt]: oneDayAgo
+                }
+            }
+        });
+        //for files
+        const filesToArchive = await Files.findAll({
+            where: {
+                timeStamp: {
+                    [Op.lt]: oneDayAgo
+                }
+            }
+        });
+        await ArchivedFiles.bulkCreate(filesToArchive);
+        await Files.destroy({
+            where: {
+                timeStamp: {
+                    [Op.lt]: oneDayAgo
+                }
+            }
+        });
+
+        console.log('Nightly archive job completed.');
+    } catch (error) {
+        console.error('Error during nightly archive job:', error);
+    }
+});
+
+// Starting the cron job
+nightlyArchiveJob.start();
 
 async function postFile(fileName, fileURL, timeStamp, userId, username, groupID) {
     const t = await sequelize.transaction();
