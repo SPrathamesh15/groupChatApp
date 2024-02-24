@@ -45,7 +45,7 @@ body{
     width: 1070px;
     padding: 20px;
     padding-left: 400px;
-    height: 570px;
+    height: 563px;
     margin-top: -415px;
     padding-right: 0px;
     overflow-y: auto;
@@ -278,4 +278,15 @@ body{
 
 #groupUsersList{
     cursor: pointer;
+}
+@font-face {
+    font-family: 'ADLaMDisplay';
+    src: url('../pictures/logofont.ttf');
+}
+.logo{
+    font-family: 'ADLaMDisplay';
+}
+.icon{
+    max-width: 50px;
+    max-height: 50px;
 }
