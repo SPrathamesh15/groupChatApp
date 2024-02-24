@@ -83,31 +83,45 @@ body{
     float: left;
 }
 .message {
-    margin-bottom: 5px;
-    padding: 10px;
+    margin-bottom: 3px;
+    padding: 8px;
     overflow: auto;
 }
 .image{
-    margin-bottom: 5px;
+    margin-bottom: 3px;
+    padding: 8px;
+    overflow: auto;
+}
+.image .image-body.sent {
+    background-color: #DCF8C6;
+    float: right;
+    margin-bottom: 10px;
 }
 .image .image-body{
     background-color: #DCF8C6;
     display: block;
     padding: 10px;
+    align-items: center;
     border-radius: 8px;
-    max-width: 50%;
-    margin-left: 320px;
+    max-width: 42%;
 }
 .image .image-body.received {
     background-color: white;
     float: left;
+    margin-bottom: 10px;
+}
+.image .image-content{
+    max-width: 250px;
+    max-width: 250px;
+    border-radius: 10px;
 }
 .message .message-body {
     background-color: #DCF8C6;
     padding: 10px;
     border-radius: 8px;
     display: block; 
-    max-width: 70%;
+    max-width: 50%;
+    word-wrap: break-word;
 }
 .image .image-body::after{
     content: "";
@@ -119,12 +133,19 @@ body{
     display: table;
     clear: both;
 }
-
+.image .time{
+    font-size: 12px;
+    color: #777;
+    float: right;
+    clear: both;
+    padding-top: 15px;
+    display: block;
+}
 .message .time {
     font-size: 12px;
     color: #777;
-    margin-left: 5px;
     float: right;
+    clear: both;
     padding-top: 15px;
     display: block;
 }
